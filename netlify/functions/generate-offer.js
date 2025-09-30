@@ -8,7 +8,7 @@ exports.handler = async function(event, context) {
     'Content-Type': 'application/json'
   };
 
-  // Handle CORS preflight
+  // ✅ NAJPIERW OPTIONS
   if (event.httpMethod === 'OPTIONS') {
     return { 
       statusCode: 204, 
@@ -17,7 +17,7 @@ exports.handler = async function(event, context) {
     };
   }
 
-  // Check if POST
+  // Dopiero potem POST
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -33,21 +33,20 @@ exports.handler = async function(event, context) {
   try {
     const { prompt } = JSON.parse(event.body);
     
-    // Prosty, szybki prompt
-    const systemPrompt = `Jesteś kalkulatorem instalacji PV. Zwracasz TYLKO czysty JSON bez markdown, komentarzy czy dodatkowego tekstu.
+    const systemPrompt = `Jesteś kalkulatorem instalacji PV. Zwracasz TYLKO czysty JSON bez markdown.
 
-CENY STAŁE (netto):
-- Moduł 450W: 450 PLN
-- Falownik 12kW: 8500 PLN
+CENY (netto):
+- Moduł 450W: 450 PLN/szt
+- Falownik 12kW hybryd: 8500 PLN
 - Magazyn 15kWh: 16000 PLN
 - Konstrukcja: 1200 PLN/kWp
 - Montaż: 3500 PLN
 - VAT: 8%
-- Produkcja (Śląsk): 950 kWh/kWp/rok
+- Produkcja Śląsk: 950 kWh/kWp/rok
 - Dotacja Mój Prąd (z magazynem): 7000 PLN
 - Dotacja gminna: 4000 PLN
 
-Format odpowiedzi (przykład dla 10kWp z magazynem 15kWh):
+PRZYKŁAD dla 10kWp z magazynem 15kWh:
 {
   "zestawienie": {
     "moduly": {"model": "Hyundai 450W", "ilosc": 23, "cenaSzt": 450, "wartosc": 10350},
@@ -57,11 +56,7 @@ Format odpowiedzi (przykład dla 10kWp z magazynem 15kWh):
     "montaz": {"opis": "Montaż kompletny", "cena": 3500},
     "razem": {"netto": 50350, "vat": 4028, "brutto": 54378}
   },
-  "dotacje": {
-    "mojPrad": 7000,
-    "gminna": 4000,
-    "razem": 11000
-  },
+  "dotacje": {"mojPrad": 7000, "gminna": 4000, "razem": 11000},
   "poDoacji": 43378,
   "kalkulacjeROI": {
     "produkcjaRoczna": 9500,
@@ -83,14 +78,11 @@ Format odpowiedzi (przykład dla 10kWp z magazynem 15kWh):
     });
 
     let responseText = response.content[0].text;
-    
-    // Strip markdown i whitespace
     responseText = responseText
       .replace(/```json\n?/g, "")
       .replace(/```\n?/g, "")
       .trim();
     
-    // Parse JSON
     const ofertaData = JSON.parse(responseText);
 
     return {
@@ -105,7 +97,7 @@ Format odpowiedzi (przykład dla 10kWp z magazynem 15kWh):
       headers,
       body: JSON.stringify({ 
         error: error.message,
-        details: 'Błąd generowania oferty. Sprawdź logi.' 
+        details: 'Błąd generowania oferty' 
       })
     };
   }
